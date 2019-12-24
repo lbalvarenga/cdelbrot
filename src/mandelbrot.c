@@ -5,10 +5,13 @@
 
 #include "banner.h"
 
-int RESOLUTION  = 120;
-double ZOOM     = 1.1;
-double OFFSET_X = -1.4075920618131836;
-double OFFSET_Y = -0.12763681635104013;
+#define SENSITIVITY 0.25
+
+const int RESOLUTION  = 80; // Base resolution (crispness)
+int MAX_ITER          = RESOLUTION; // ignore
+double ZOOM           = 0.75;
+double OFFSET_X       = -0.75;
+double OFFSET_Y       = 0;
 
 void draw(int width, int height, double drawtime);
 int mandelbrot(complex c, int range);
@@ -41,19 +44,63 @@ int main(void)
     // Status bar info
     int render = 0;
 
-    // Draw loop
+    // Kinda ugly but works
+    werase(statusbar);
+    wprintw(statusbar, " Render #%d: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
+            render, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
+    draw(width, height, 0);
+    refresh();
+    wrefresh(statusbar);
+    
     for (;;) 
     {
-        draw(width, height, 0);
-        ZOOM += 0.25 * ZOOM;
+        // Listen for keypresses
+        char key = getc(stdin);
+        switch (key)
+        {
+            case 'q':
+                endwin(); // End curses mode
+                return 0;
+            case 'w':
+                OFFSET_Y -= 1 / ZOOM * SENSITIVITY;
+                break;
+            case 'a':
+                OFFSET_X -= 1 / ZOOM * SENSITIVITY;
+                break;
+            case 's':
+                OFFSET_Y += 1 / ZOOM * SENSITIVITY;
+                break;
+            case 'd':
+                OFFSET_X += 1 / ZOOM * SENSITIVITY;
+                break;
+            case 'e':
+                ZOOM -= ZOOM * SENSITIVITY;
+                if (ZOOM < 0) ZOOM = 1;
+                break;
+            case 'r':
+                ZOOM += ZOOM * SENSITIVITY;
+                break;               
+            default:
+                continue;
+        }
+
+        // Dinamically increase resolution based on ZOOM
+        // Comment out to disable
+        MAX_ITER = round(log10(ZOOM) * RESOLUTION) + 1;
+        if (MAX_ITER < RESOLUTION ) MAX_ITER = RESOLUTION;
 
         // Update status bar
         werase(statusbar);
-        wprintw(statusbar, " Render #%d", render);
-        wrefresh(statusbar);
+        wprintw(statusbar, " Render #%d: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
+                render, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
         render++;
 
-        usleep(150000);
+        // Draw fractal
+        draw(width, height, 0);
+
+        // Refresh windows
+        refresh();
+        wrefresh(statusbar);
     }
 
     return 0;
@@ -72,15 +119,13 @@ void draw(int width, int height, double drawtime)
             double cx = map(x, 0, width,  -1, 1);
             double cy = map(y, 0, height, -1, 1);
             complex c = (cx / ZOOM + OFFSET_X) + (cy / ZOOM + OFFSET_Y) * I;
-            int m = mandelbrot(c, RESOLUTION);
+            int m = mandelbrot(c, MAX_ITER);
 
-            // Fit output into char array and print
-            double val = map(m, 0, RESOLUTION, 0, 5);
+            // Map fractal into char array and print
+            double val = map(m, 0, MAX_ITER, 0, 5);
             mvaddch(y, x, intensity[(int)round(val)]);
         }
     }
-
-    refresh();
 
     return;
 }

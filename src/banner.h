@@ -8,6 +8,6 @@ const char *banner = " .d8888b.  8888888b.           888 888                    
                      " 'Y8888P'  8888888P'   'Y8888  888 88888P'  888     'Y88P'   'Y888 \n"
                      "                                                                   \n"
                      "  C Mandebrot Demo by Lucas Alvarenga. Press any key to continue.  \n"
-                     "   -> Arrow keys:                pan view                          \n"
-                     "   -> Mouse Wheel / PgUp / PgDn: zoom view                         \n"
-                     "   -> CTRL+C:                    exit program                      \n";
+                     "   -> W / A / S / D: pan view                                      \n"
+                     "   -> E / R:         decrease / increase zoom                      \n"
+                     "   -> Q:             exit program                                  \n";
