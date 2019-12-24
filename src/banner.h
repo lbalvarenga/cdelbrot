@@ -1,0 +1,13 @@
+const char *banner = " .d8888b.  8888888b.           888 888                      888    \n"
+                     "d88P  Y88b 888  'Y88b          888 888                      888    \n"
+                     "888    888 888    888          888 888                      888    \n"
+                     "888        888    888  .d88b.  888 88888b.  888d888 .d88b.  888888 \n"
+                     "888        888    888 d8P  Y8b 888 888 '88b 888P'  d88''88b 888    \n"
+                     "888    888 888    888 88888888 888 888  888 888    888  888 888    \n"
+                     "Y88b  d88P 888  .d88P Y8b.     888 888 d88P 888    Y88..88P Y88b.  \n"
+                     " 'Y8888P'  8888888P'   'Y8888  888 88888P'  888     'Y88P'   'Y888 \n"
+                     "                                                                   \n"
+                     "  C Mandebrot Demo by Lucas Alvarenga. Press any key to continue.  \n"
+                     "   -> Arrow keys:                pan view                          \n"
+                     "   -> Mouse Wheel / PgUp / PgDn: zoom view                         \n"
+                     "   -> CTRL+C:                    exit program                      \n";
