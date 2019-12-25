@@ -1,7 +1,6 @@
 #include <ncurses.h>
 #include <math.h>
 #include <complex.h>
-#include <unistd.h>
 
 #include "banner.h"
 
@@ -12,6 +11,7 @@ int MAX_ITER          = RESOLUTION; // ignore
 double ZOOM           = 0.75;
 double OFFSET_X       = -0.75;
 double OFFSET_Y       = 0;
+// try this: [x: -0.74815226, y: -0.07151054]
 
 void draw(int width, int height, double drawtime);
 int mandelbrot(complex c, int range);
@@ -86,14 +86,14 @@ int main(void)
 
         // Dinamically increase resolution based on ZOOM
         // Comment out to disable
-        MAX_ITER = round(log10(ZOOM) * RESOLUTION) + 1;
+        MAX_ITER = round(log10(ZOOM) * RESOLUTION);
         if (MAX_ITER < RESOLUTION ) MAX_ITER = RESOLUTION;
 
         // Update status bar
+        render++;
         werase(statusbar);
         wprintw(statusbar, " Render #%d: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
                 render, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
-        render++;
 
         // Draw fractal
         draw(width, height, 0);
@@ -108,7 +108,7 @@ int main(void)
 
 void draw(int width, int height, double drawtime)
 {
-    char *intensity = " .,-+#";
+    char *intensity = " .-+#";
 
     // y = 1 for statusbar
     for (int y = 1; y < height; ++y)
@@ -122,7 +122,7 @@ void draw(int width, int height, double drawtime)
             int m = mandelbrot(c, MAX_ITER);
 
             // Map fractal into char array and print
-            double val = map(m, 0, MAX_ITER, 0, 5);
+            double val = map(m, 0, MAX_ITER, 0, 4);
             mvaddch(y, x, intensity[(int)round(val)]);
         }
     }
