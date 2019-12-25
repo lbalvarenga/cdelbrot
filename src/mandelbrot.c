@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <math.h>
 #include <complex.h>
+#include <time.h> // For benchmarking
 
 #include "banner.h"
 
@@ -11,9 +12,11 @@ int MAX_ITER          = RESOLUTION; // ignore
 double ZOOM           = 0.75;
 double OFFSET_X       = -0.75;
 double OFFSET_Y       = 0;
+int RENDER_NO         = 0;
 // try this: [x: -0.74815226, y: -0.07151054]
 
-void draw(int width, int height, double drawtime);
+void draw_fractal(int width, int height);
+void draw_screen(int width, int height, WINDOW *statusbar);
 int mandelbrot(complex c, int range);
 double map(double value, double min, double max, double start, double end);
 
@@ -41,17 +44,9 @@ int main(void)
     WINDOW *statusbar = newwin(1, width, 0, 0);
     wbkgd(statusbar, COLOR_PAIR(2));
 
-    // Status bar info
-    int render = 0;
+    // Initial draw
+    draw_screen(width, height, statusbar);
 
-    // Kinda ugly but works
-    werase(statusbar);
-    wprintw(statusbar, " Render #%d: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
-            render, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
-    draw(width, height, 0);
-    refresh();
-    wrefresh(statusbar);
-    
     for (;;) 
     {
         // Listen for keypresses
@@ -84,29 +79,14 @@ int main(void)
                 continue;
         }
 
-        // Dinamically increase resolution based on ZOOM
-        // Comment out to disable
-        MAX_ITER = round(log10(ZOOM) * RESOLUTION);
-        if (MAX_ITER < RESOLUTION ) MAX_ITER = RESOLUTION;
+        draw_screen(width, height, statusbar);
 
-        // Update status bar
-        render++;
-        werase(statusbar);
-        wprintw(statusbar, " Render #%d: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
-                render, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
-
-        // Draw fractal
-        draw(width, height, 0);
-
-        // Refresh windows
-        refresh();
-        wrefresh(statusbar);
     }
 
     return 0;
 }
 
-void draw(int width, int height, double drawtime)
+void draw_fractal(int width, int height)
 {
     char *intensity = " .-+#";
 
@@ -128,6 +108,30 @@ void draw(int width, int height, double drawtime)
     }
 
     return;
+}
+
+void draw_screen(int width, int height, WINDOW *statusbar)
+{
+    // Dinamically increase resolution based on ZOOM
+        // Comment out to disable
+    MAX_ITER = round(log10(ZOOM) * RESOLUTION);
+    if (MAX_ITER < RESOLUTION ) MAX_ITER = RESOLUTION;
+
+    // Draw fractal
+    clock_t clk = clock();
+    draw_fractal(width, height);
+    clk = clock() - clk;
+    double exec_time = (double)clk / CLOCKS_PER_SEC;
+
+    // Update status bar
+    RENDER_NO++;
+    werase(statusbar);
+    wprintw(statusbar, "(%.6fs) [#%d]: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
+                exec_time, RENDER_NO, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
+
+    // Refresh windows
+    refresh();
+    wrefresh(statusbar);
 }
 
 int mandelbrot(complex c, int range)
