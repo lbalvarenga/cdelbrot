@@ -5,18 +5,23 @@
 
 #include "banner.h"
 
-#define SENSITIVITY 0.25
+typedef struct _FRACTAL_SETTINGS_
+{    
+    int resolution;
+    int max_iter;
+    unsigned int width;
+    unsigned int height;
+    unsigned int iteration;
+    double sensitivity;
+    double zoom;
+    double offset_x;
+    double offset_y;
+} fractal_settings;
 
-const int RESOLUTION  = 80; // Base resolution (crispness)
-int MAX_ITER          = RESOLUTION; // ignore
-double ZOOM           = 0.75;
-double OFFSET_X       = -0.75;
-double OFFSET_Y       = 0;
-int RENDER_NO         = 0;
 // try this: [x: -0.74815226, y: -0.07151054]
 
-void draw_fractal(int width, int height);
-void draw_screen(int width, int height, WINDOW *statusbar);
+void draw_fractal(fractal_settings settings);
+void draw_screen(fractal_settings *settings, WINDOW *statusbar);
 int mandelbrot(complex c, int range);
 double map(double value, double min, double max, double start, double end);
 
@@ -36,18 +41,25 @@ int main(void)
     refresh();
     getch();
 
-    // Get width / height
-    int width, height;
-    getmaxyx(stdscr, height, width);
+    // Set fractal settings
+    fractal_settings settings;
+    settings.resolution  = 80;
+    settings.max_iter    = settings.resolution;
+    getmaxyx(stdscr, settings.height, settings.width);
+    settings.iteration   = 0;
+    settings.sensitivity = 0.25;
+    settings.zoom        = 0.75;
+    settings.offset_x    = -0.75;
+    settings.offset_y    =  0.00;
 
     // Create status bar
-    WINDOW *statusbar = newwin(1, width, 0, 0);
+    WINDOW *statusbar = newwin(1, settings.width, 0, 0);
     wbkgd(statusbar, COLOR_PAIR(2));
 
     // Initial draw
-    draw_screen(width, height, statusbar);
+    draw_screen(&settings, statusbar);
 
-    for (;;) 
+    while (true) 
     {
         // Listen for keypresses
         char key = getc(stdin);
@@ -57,77 +69,87 @@ int main(void)
                 endwin(); // End curses mode
                 return 0;
             case 'w':
-                OFFSET_Y -= 1 / ZOOM * SENSITIVITY;
+                settings.offset_y -= 1 / settings.zoom * settings.sensitivity;
                 break;
             case 'a':
-                OFFSET_X -= 1 / ZOOM * SENSITIVITY;
+                settings.offset_x -= 1 / settings.zoom * settings.sensitivity;
                 break;
             case 's':
-                OFFSET_Y += 1 / ZOOM * SENSITIVITY;
+                settings.offset_y += 1 / settings.zoom * settings.sensitivity;
                 break;
             case 'd':
-                OFFSET_X += 1 / ZOOM * SENSITIVITY;
+                settings.offset_x += 1 / settings.zoom * settings.sensitivity;
                 break;
             case 'e':
-                ZOOM -= ZOOM * SENSITIVITY;
-                if (ZOOM < 0) ZOOM = 1;
+                settings.zoom -= settings.zoom * settings.sensitivity;
+                if (settings.zoom < 0) settings.zoom = 1;
                 break;
             case 'r':
-                ZOOM += ZOOM * SENSITIVITY;
+                settings.zoom += settings.zoom * settings.sensitivity;
                 break;               
             default:
                 continue;
         }
 
-        draw_screen(width, height, statusbar);
+        draw_screen(&settings, statusbar);
 
     }
 
     return 0;
 }
 
-void draw_fractal(int width, int height)
+void draw_fractal(fractal_settings settings)
 {
     char *intensity = " .-+#";
 
     // y = 1 for statusbar
-    for (int y = 1; y < height; ++y)
+    for (int y = 1; y < settings.height; ++y)
     {
-        for (int x = 0; x < width; ++x)
+        for (int x = 0; x < settings.width; ++x)
         {
             // Get complex number based on current "pixel"
-            double cx = map(x, 0, width,  -1, 1);
-            double cy = map(y, 0, height, -1, 1);
-            complex c = (cx / ZOOM + OFFSET_X) + (cy / ZOOM + OFFSET_Y) * I;
-            int m = mandelbrot(c, MAX_ITER);
+            double cx = map(x, 0, settings.width,  -1, 1);
+            double cy = map(y, 0, settings.height, -1, 1);
+            complex c = (cx / settings.zoom + settings.offset_x) + (cy / settings.zoom + settings.offset_y) * I;
+            int m = mandelbrot(c, settings.max_iter);
 
             // Map fractal into char array and print
-            double val = map(m, 0, MAX_ITER, 0, 4);
-            mvaddch(y, x, intensity[(int)round(val)]);
+            double val = map(m, 0, settings.max_iter, 0, 4);
+            mvaddch(y, x, intensity[(int)val]);
         }
     }
 
     return;
 }
 
-void draw_screen(int width, int height, WINDOW *statusbar)
+void draw_screen(fractal_settings *settings, WINDOW *statusbar)
 {
-    // Dinamically increase resolution based on ZOOM
-        // Comment out to disable
-    MAX_ITER = round(log10(ZOOM) * RESOLUTION);
-    if (MAX_ITER < RESOLUTION ) MAX_ITER = RESOLUTION;
+    // Dinamically increase resolution based on settings->zoom
+    // Comment out to disable
+    settings->max_iter = round(log10(settings->zoom) * settings->resolution);
+    if (settings->max_iter < settings->resolution )
+    {
+        settings->max_iter = settings->resolution;
+    }
 
     // Draw fractal
     clock_t clk = clock();
-    draw_fractal(width, height);
+
+    draw_fractal(*settings);
+
     clk = clock() - clk;
     double exec_time = (double)clk / CLOCKS_PER_SEC;
 
     // Update status bar
-    RENDER_NO++;
+    settings->iteration++;
     werase(statusbar);
     wprintw(statusbar, "(%.6fs) [#%d]: [x: %.8f, y: %.8f], ZOOM = %.2fx, MAX_ITER = %d",
-                exec_time, RENDER_NO, OFFSET_X, OFFSET_Y, ZOOM, MAX_ITER);
+            exec_time,
+            settings->iteration,
+            settings->offset_x,
+            settings->offset_y,
+            settings->zoom,
+            settings->max_iter);
 
     // Refresh windows
     refresh();
