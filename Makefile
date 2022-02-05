@@ -1,5 +1,5 @@
 all:
-	gcc -Wall -O3 -lm -lncurses -o ./mandelbrot ./src/mandelbrot.c
+	gcc -Wall -O3 -o ./mandelbrot ./src/mandelbrot.c -lm -lncurses
 
 run: all
 	./mandelbrot
