@@ -17,6 +17,8 @@ Logo created with [TAAG](http://www.patorjk.com/software/taag/).
 
 ## Compilation
 
+Make sure ncurses (libncurses5-dev or similar) is installed.
+
 In a Linux shell, clone the repository with
 
 ```bash
